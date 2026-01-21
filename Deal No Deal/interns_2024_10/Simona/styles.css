@@ -1,0 +1,121 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    text-align: center;
+    background-color: white;
+    padding: 20px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+header {
+    margin-bottom: 20px;
+}
+
+.game-panel {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.labels-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.labels {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 400px;
+}
+
+.label {
+    background-color: #ff0000;
+    color: white;
+    padding: 5px;
+    border: 2px solid #333;
+    border-radius: 5px;
+    text-align: center;
+    margin: 5px 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.label.crossed {
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+.game-board {
+    margin: 0 20px;
+}
+
+.briefcases {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+.briefcase {
+    width: 100px;
+    height: 100px;
+    background-color: #FFD700;
+    border: 2px solid #333;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+.briefcase:hover {
+    background-color: #FFA500;
+}
+
+.selected {
+    background-color: #FFA500;
+}
+
+.opened {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.game-controls {
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 0 10px;
+    border: none;
+    background-color: #333;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #555;
+}
+
+.game-info {
+    font-size: 18px;
+}

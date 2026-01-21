@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Deal or No Deal</title>
+    <style>
+        #boxes div {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            background: lightgrey;
+            margin: 5px;
+            text-align: center;
+            line-height: 50px;
+            cursor: pointer;
+            border: 1px solid black;
+        }
+
+        #prices li {
+            list-style: none;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #04AA6D;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            opacity: 0.9;
+        }
+
+        button:hover {
+            opacity: 1;
+        }
+
+        .cancelbtn,
+        .deletebtn {
+            float: left;
+            width: 50%;
+        }
+
+        .cancelbtn {
+            background-color: #ccc;
+            color: black;
+        }
+
+        .deletebtn {
+            background-color: #f44336;
+        }
+
+        .container {
+            padding: 16px;
+            text-align: center;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: #474e5d;
+            padding-top: 50px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto 15% auto;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        hr {
+            border: 1px solid #f1f1f1;
+            margin-bottom: 25px;
+        }
+
+        .close {
+            position: absolute;
+            right: 35px;
+            top: 15px;
+            font-size: 40px;
+            font-weight: bold;
+            color: #f1f1f1;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #f44336;
+            cursor: pointer;
+        }
+
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+
+        @media screen and (max-width: 300px) {
+
+            .cancelbtn,
+            .deletebtn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="boxes"></div>
+    <ul id="prices"></ul>
+    <div id="offer"></div>
+    <div id="status"></div>
+    <div id="boxesToOpen">Boxes to open this round: 0</div>
+
+    <div id="offerModal" class="modal">
+        <div class="modal-content">
+            <div class="container">
+                <h1>The Banker's Offer</h1>
+                <p id="offerText"></p>
+                <div class="clearfix">
+                    <button id="dealButton" type="button" class="deletebtn">Deal</button>
+                    <button id="noDealButton" type="button" class="cancelbtn">No Deal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", (event) => {
+            loadBoxes();
+            loadPrices();
+            boxesToNextOffer = getNextOfferInterval();
+            updateBoxesToOpen();
+        });
+
+        let boxes = [];
+        const numberBoxes = 26;
+        let userBox = null;
+        const dealOrNoDealPrizes = [
+            0.01, 1, 5, 10, 25, 50, 75, 100, 200, 300, 400, 500,
+            750, 1000, 5000, 10000, 25000, 50000, 75000, 100000,
+            200000, 300000, 400000, 500000, 750000, 1000000
+        ];
+        let boxesOpened = 0;
+        let boxesToNextOffer = 26;
+        let round = 1;
+
+        function loadBoxes() {
+            let boxesCont = document.getElementById("boxes");
+            boxes = [...dealOrNoDealPrizes];
+            shuffleArray(boxes);
+            for (let i = 0; i < numberBoxes; i++) {
+                let box = document.createElement("div");
+                box.id = i;
+                box.addEventListener("click", () => clickBox(i));
+                box.innerText = i + 1;
+                boxesCont.appendChild(box);
+            }
+        }
+
+        function loadPrices() {
+            let pricesCont = document.getElementById("prices");
+            for (let i = 0; i < numberBoxes; i++) {
+                let price = document.createElement("li");
+                price.innerText = dealOrNoDealPrizes[i];
+                pricesCont.appendChild(price);
+            }
+        }
+
+        function clickBox(i) {
+            let box = document.getElementById(i);
+            if (box.style.background === "yellow" || box.style.color === "green") {
+                alert("You can't choose an opened case!");
+                return;
+            }
+            if (userBox == null) {
+                userBox = i;
+                box.style.pointerEvents = "none";
+                box.style.background = "yellow";
+            } else {
+                box.innerText = boxes[i];
+                box.style.color = "green";
+                let pricesCont = document.getElementById("prices");
+                pricesCont.childNodes.forEach(element => {
+                    if (element.innerText == boxes[i]) {
+                        element.style.color = "red";
+                    }
+                });
+                boxesOpened++;
+                boxesToNextOffer--;
+                updateBoxesToOpen();
+                if (boxesToNextOffer == 0 && boxesOpened < 24) {
+                    disableAllBoxes();
+                    let offerAmount = offer();
+                    showOffer(offerAmount);
+                } else if (boxesOpened == 24) {
+                    disableAllBoxes();
+                    showLastOffer();
+                }
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function offer() {
+            let pricesCont = document.getElementById("prices");
+            let sum = 0;
+            let count = 0;
+            pricesCont.childNodes.forEach(element => {
+                if (element.style.color !== "red") {
+                    sum += Number(element.innerText);
+                    count++;
+                }
+            });
+
+            return Math.floor(sum / count * 0.75);
+        }
+
+        function swapCase() {
+            if (userBox != null) {
+                let box = document.getElementById(userBox);
+                box.style.background = "white";
+                box.style.pointerEvents = "auto";
+                userBox = null;
+                alert("Case swapped!");
+            } else {
+                alert("You must choose a case first!");
+            }
+        }
+
+        function getNextOfferInterval() {
+            if (boxesOpened < 6) return 6;
+            if (boxesOpened < 11) return 5;
+            if (boxesOpened < 15) return 4;
+            if (boxesOpened < 18) return 3;
+            if (boxesOpened < 20) return 2;
+            return 1;
+        }
+
+        function showOffer(amount) {
+            let offerText = document.getElementById("offerText");
+            offerText.innerHTML = `The Banker's Offer: $${amount}`;
+            let modal = document.getElementById("offerModal");
+            modal.style.display = "block";
+
+            document.getElementById("dealButton").onclick = () => deal(amount);
+            document.getElementById("noDealButton").onclick = () => noDeal();
+        }
+
+        function showLastOffer() {
+            let offerDiv = document.getElementById("offer");
+            offerDiv.innerHTML = `<p>Would you like to swap your case?</p><button id="swapButton">Swap Case</button><button id="keepButton">Keep Case</button>`;
+            document.getElementById("swapButton").addEventListener("click", swapCaseFinal);
+            document.getElementById("keepButton").addEventListener("click", endGameFinal);
+        }
+
+        function swapCaseFinal() {
+            let newUserBox;
+            for (let i = 0; i < numberBoxes; i++) {
+                if (i !== userBox && document.getElementById(i).style.color !== "green") {
+                    newUserBox = i;
+                    break;
+                }
+            }
+            if (newUserBox != null) {
+                let oldBox = document.getElementById(userBox);
+                oldBox.style.background = "lightgrey";
+                oldBox.style.pointerEvents = "auto";
+
+                userBox = newUserBox;
+                let newBox = document.getElementById(userBox);
+                newBox.style.background = "yellow";
+                newBox.style.pointerEvents = "none";
+
+                alert("Case swapped!");
+            }
+            revealFinalCases();
+        }
+
+        function endGameFinal() {
+            revealFinalCases();
+        }
+
+        function revealFinalCases() {
+            let statusDiv = document.getElementById("status");
+            let finalAmount = boxes[userBox];
+            let otherBox;
+            for (let i = 0; i < numberBoxes; i++) {
+                if (i !== userBox && document.getElementById(i).style.color !== "green") {
+                    otherBox = i;
+                    break;
+                }
+            }
+            let otherBoxAmount = boxes[otherBox];
+
+            statusDiv.innerText = `Game over! In your box was $${finalAmount}. In the other box was $${otherBoxAmount}.`;
+
+            let userBoxElement = document.getElementById(userBox);
+            userBoxElement.innerText = finalAmount;
+
+            let otherBoxElement = document.getElementById(otherBox);
+            otherBoxElement.innerText = otherBoxAmount;
+            otherBoxElement.style.color = "green";
+
+            let offerDiv = document.getElementById("offer");
+            offerDiv.innerHTML = '';
+            disableAllBoxes();
+        }
+
+        function endGame(amount) {
+            let statusDiv = document.getElementById("status");
+            statusDiv.innerText = `You accepted the offer of $${amount}. Game over! In your box was $${boxes[userBox]}.`;
+            let box = document.getElementById(userBox);
+            box.innerText = boxes[userBox];
+            let offerDiv = document.getElementById("offer");
+            offerDiv.innerHTML = '';
+            disableAllBoxes();
+
+            let modal = document.getElementById("offerModal");
+            modal.style.display = "none";
+        }
+
+        function continueGame() {
+            let modal = document.getElementById("offerModal");
+            modal.style.display = "none";
+            boxesToNextOffer = getNextOfferInterval();
+            updateBoxesToOpen();
+            enableAllBoxes();
+        }
+
+        function disableAllBoxes() {
+            let boxes = document.getElementById("boxes").children;
+            for (let box of boxes) {
+                box.style.pointerEvents = "none";
+            }
+        }
+
+        function enableAllBoxes() {
+            let boxes = document.getElementById("boxes").children;
+            for (let box of boxes) {
+                if (box.style.background !== "yellow" && box.style.color !== "green") {
+                    box.style.pointerEvents = "auto";
+                }
+            }
+        }
+
+        function updateBoxesToOpen() {
+            let boxesToOpenDiv = document.getElementById("boxesToOpen");
+            boxesToOpenDiv.innerText = `Boxes to open this round: ${boxesToNextOffer}`;
+        }
+
+        function deal(amount) {
+            endGame(amount);
+        }
+
+        function noDeal() {
+            continueGame();
+        }
+    </script>
+</body>
+
+</html>
